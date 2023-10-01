@@ -1,14 +1,113 @@
-import {View, Text, SafeAreaView, TextInput, Image} from 'react-native';
-import React from 'react';
+import {
+  View,
+  Text,
+  SafeAreaView,
+  TextInput,
+  Image,
+  TouchableOpacity,
+  FlatList,
+  Alert,
+} from 'react-native';
+import React, {useEffect, useState} from 'react';
 import Header from '../components/Header';
-import Item_List from '../components/Item_List';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import LottieView from 'lottie-react-native';
 
 const Main_Screen = () => {
+  const [Value, setValue] = useState('');
+  const [todoList, settodoList] = useState([]);
+
+  useEffect(() => {
+    Load_Item();
+  }, []);
+
+  const Add_Item = async () => {
+    const newTasks = [
+      ...todoList,
+      {id: Math.floor(Math.random() * 100 + 1), title: Value},
+    ];
+    await AsyncStorage.setItem('TASKS', JSON.stringify(newTasks));
+    settodoList(newTasks);
+    setValue('');
+  };
+  const Load_Item = async () => {
+    const itemsArray = JSON.parse(await AsyncStorage.getItem('TASKS'));
+    settodoList(itemsArray);
+  };
+
+  const Edit_Task = id => {};
+  const Delete_Task = async id => {
+    const Delete = todoList.filter(item => item.id !== id);
+    await AsyncStorage.setItem('TASKS', JSON.stringify(Delete));
+    settodoList(Delete);
+  };
+
+  const clearTodos = () => {
+    Alert.alert('Confirm', 'Clear todo list?', [
+      {
+        text: 'Yes',
+        onPress: () => {
+          settodoList([]);
+          AsyncStorage.clear();
+        },
+      },
+      {text: 'No'},
+    ]);
+  };
+  const renderItem = ({item}) => {
+    return (
+      <View
+        style={{
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginTop: 20,
+          marginHorizontal: 10,
+          borderWidth: 1,
+          borderColor: 'black',
+          borderRadius: 20,
+          padding: 10,
+        }}>
+        <Text style={{fontSize: 20, fontWeight: '500', color: 'black'}}>
+          {item.title}
+        </Text>
+        <View style={{flexDirection: 'row'}}>
+          <TouchableOpacity onPress={() => Edit_Task(item.id)}>
+            <Image
+              style={{width: 35, height: 35, marginRight: 15}}
+              source={require('../src/images/edit.png')}
+            />
+          </TouchableOpacity>
+
+          <TouchableOpacity onPress={() => Delete_Task(item.id)}>
+            <Image
+              style={{width: 35, height: 35, tintColor: 'red'}}
+              source={require('../src/images/delete.png')}
+            />
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  };
+
   return (
     <SafeAreaView style={{flex: 1}}>
       <View>
         <Header />
-        <Item_List />
+        {todoList == '' ? (
+          <LottieView
+            source={require('../src/images/no_item.json')}
+            autoPlay
+            loop
+            style={{width:100,height:100}}
+          />
+        ) : (
+          <FlatList
+            data={todoList}
+            renderItem={renderItem}
+            keyExtractor={item => item.id}
+          />
+        )}
       </View>
       <View
         style={{
@@ -25,15 +124,26 @@ const Main_Screen = () => {
             height: 50,
             borderWidth: 1,
             borderColor: 'black',
-            width: '85%',
+            width: '75%',
             borderRadius: 30,
-            padding:15
+            padding: 15,
           }}
+          placeholder="Add Your Task..."
+          value={Value}
+          onChangeText={text => setValue(text)}
         />
-        <Image
-          style={{width: 50, height: 50}}
-          source={require('../src/images/add.png')}
-        />
+        <TouchableOpacity onPress={() => Add_Item()}>
+          <Image
+            style={{width: 50, height: 50, marginLeft: 5}}
+            source={require('../src/images/add.png')}
+          />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => clearTodos()}>
+          <Image
+            style={{width: 50, height: 50, tintColor: 'red'}}
+            source={require('../src/images/clear.png')}
+          />
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
