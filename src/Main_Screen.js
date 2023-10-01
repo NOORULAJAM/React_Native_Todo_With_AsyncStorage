@@ -8,6 +8,8 @@ import {
   FlatList,
   Alert,
   StatusBar,
+  Modal,
+  StyleSheet,
 } from 'react-native';
 import React, {useEffect, useState} from 'react';
 import Header from '../components/Header';
@@ -17,6 +19,9 @@ import LottieView from 'lottie-react-native';
 const Main_Screen = () => {
   const [Value, setValue] = useState('');
   const [todoList, settodoList] = useState([]);
+  const [modal, setmodal] = useState(false);
+  const [modal_value, setmodal_value] = useState('');
+  const [New_Arr, setNew_Arr] = useState([]);
 
   useEffect(() => {
     Load_Item();
@@ -35,6 +40,7 @@ const Main_Screen = () => {
       console.warn('Filed is empty');
     }
   };
+
   const Load_Item = async () => {
     const itemsArray = JSON.parse(await AsyncStorage.getItem('TASKS'));
     if (itemsArray) {
@@ -45,7 +51,12 @@ const Main_Screen = () => {
     }
   };
 
-  const Edit_Task = id => {};
+  const Edit_Task = item => {
+    setNew_Arr({id: item.id, title: item.title});
+    setmodal_value(item.title);
+    setmodal(true);
+  };
+
   const Delete_Task = async id => {
     const Delete = todoList.filter(item => item.id !== id);
     await AsyncStorage.setItem('TASKS', JSON.stringify(Delete));
@@ -64,6 +75,19 @@ const Main_Screen = () => {
       {text: 'No'},
     ]);
   };
+
+  const Update_Value = async () => {
+    const Update = todoList.map(item => {
+      if (item.id === New_Arr.id) {
+        return {...item, title: modal_value};
+      }
+      return item;
+    });
+    settodoList(Update);
+    await AsyncStorage.setItem('TASKS', JSON.stringify(Update));
+    setmodal(false)
+  };
+
   const renderItem = ({item}) => {
     return (
       <View
@@ -82,7 +106,7 @@ const Main_Screen = () => {
           {item.title}
         </Text>
         <View style={{flexDirection: 'row'}}>
-          <TouchableOpacity onPress={() => Edit_Task(item.id)}>
+          <TouchableOpacity onPress={() => Edit_Task(item)}>
             <Image
               style={{width: 35, height: 35, marginRight: 15}}
               source={require('../src/images/edit.png')}
@@ -120,6 +144,32 @@ const Main_Screen = () => {
           />
         )}
       </View>
+      {modal ? (
+        <Modal animationType="slide" transparent={true}>
+          <View style={styles.modalView}>
+            <TextInput
+              value={modal_value}
+              onChangeText={text => {
+                setmodal_value(text);
+              }}
+              style={{
+                height: 50,
+                borderWidth: 1,
+                borderColor: 'black',
+                width: '100%',
+                borderRadius: 30,
+                padding: 15,
+              }}
+              placeholder="Enter something..."
+            />
+            <TouchableOpacity onPress={() => Update_Value()}>
+              <Text style={{marginTop: 10, color: 'green'}}>Save</Text>
+            </TouchableOpacity>
+          </View>
+        </Modal>
+      ) : (
+        ''
+      )}
       <View
         style={{
           flexDirection: 'row',
@@ -143,6 +193,7 @@ const Main_Screen = () => {
           value={Value}
           onChangeText={text => setValue(text)}
         />
+
         <TouchableOpacity onPress={() => Add_Item(Value)}>
           <Image
             style={{width: 50, height: 50, marginLeft: 5}}
@@ -161,3 +212,17 @@ const Main_Screen = () => {
 };
 
 export default Main_Screen;
+const styles = StyleSheet.create({
+  modalView: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'absolute',
+    top: '40%',
+    left: '15%',
+    marginHorizontal: '10%',
+    elevation: 5,
+    padding: 20,
+    backgroundColor: '#fff',
+    borderRadius: 7,
+  },
+});
