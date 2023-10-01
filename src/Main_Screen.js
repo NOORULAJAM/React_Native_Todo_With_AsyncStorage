@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   FlatList,
   Alert,
+  StatusBar,
 } from 'react-native';
 import React, {useEffect, useState} from 'react';
 import Header from '../components/Header';
@@ -22,17 +23,26 @@ const Main_Screen = () => {
   }, []);
 
   const Add_Item = async () => {
-    const newTasks = [
-      ...todoList,
-      {id: Math.floor(Math.random() * 100 + 1), title: Value},
-    ];
-    await AsyncStorage.setItem('TASKS', JSON.stringify(newTasks));
-    settodoList(newTasks);
-    setValue('');
+    if (Value) {
+      const newTasks = [
+        ...todoList,
+        {id: Math.floor(Math.random() * 100 + 1), title: Value},
+      ];
+      await AsyncStorage.setItem('TASKS', JSON.stringify(newTasks));
+      settodoList(newTasks);
+      setValue('');
+    } else {
+      console.warn('Filed is empty');
+    }
   };
   const Load_Item = async () => {
     const itemsArray = JSON.parse(await AsyncStorage.getItem('TASKS'));
-    settodoList(itemsArray);
+    if (itemsArray) {
+      settodoList(itemsArray);
+      console.log('settt huwa');
+    } else {
+      console.log('Nahi huwa');
+    }
   };
 
   const Edit_Task = id => {};
@@ -92,20 +102,21 @@ const Main_Screen = () => {
 
   return (
     <SafeAreaView style={{flex: 1}}>
+      <StatusBar backgroundColor={'#73e600'} />
       <View>
         <Header />
-        {todoList == '' ? (
-          <LottieView
-            source={require('../src/images/no_item.json')}
-            autoPlay
-            loop
-            style={{width:100,height:100}}
-          />
-        ) : (
+        {todoList.length !== 0 ? (
           <FlatList
             data={todoList}
             renderItem={renderItem}
             keyExtractor={item => item.id}
+          />
+        ) : (
+          <LottieView
+            source={require('../src/images/no_item.json')}
+            style={{width: '100%', height: '80%'}}
+            autoPlay
+            loop
           />
         )}
       </View>
@@ -132,7 +143,7 @@ const Main_Screen = () => {
           value={Value}
           onChangeText={text => setValue(text)}
         />
-        <TouchableOpacity onPress={() => Add_Item()}>
+        <TouchableOpacity onPress={() => Add_Item(Value)}>
           <Image
             style={{width: 50, height: 50, marginLeft: 5}}
             source={require('../src/images/add.png')}
