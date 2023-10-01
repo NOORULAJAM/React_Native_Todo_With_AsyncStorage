@@ -85,7 +85,7 @@ const Main_Screen = () => {
     });
     settodoList(Update);
     await AsyncStorage.setItem('TASKS', JSON.stringify(Update));
-    setmodal(false)
+    setmodal(false);
   };
 
   const renderItem = ({item}) => {
